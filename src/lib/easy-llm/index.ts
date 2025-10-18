@@ -50,6 +50,9 @@ export function EasyLLM({ url = 'https://api.deepseek.com/chat/completions', api
                 body
             });
             return returnObject;
+        },
+        abort: () => {
+            others.signal.abort()
         }
     };
 

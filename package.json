@@ -14,11 +14,12 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write .",
-    "test": "ts-node src/test/app.ts"
+    "test": "ts-node src/test/app.ts",
+    "test:ollama": "ts-node src/test/ollama.ts"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Hussain Nazarnejad",
+  "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
     "@eslint/js": "^9.38.0",
