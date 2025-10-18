@@ -1,5 +1,5 @@
 {
-  "name": "easy-llm",
+  "name": "easy-llm-call",
   "version": "1.0.0",
   "description": "an easy way to make call to LLMs with function call and tools. tested by: Deepseek, openAI, ollama",
   "main": "dist/index.js",
