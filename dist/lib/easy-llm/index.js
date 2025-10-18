@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EasyLLM = EasyLLM;
 const axios_1 = __importDefault(require("axios"));
 const utils_1 = require("./utils");
-function EasyLLM({ url = 'https://api.deepseek.com/chat/completions', apiKey }) {
+function EasyLLM({ url = 'https://api.deepseek.com/chat/completions', apiKey, }) {
     const https = axios_1.default.create({
         baseURL: url,
         headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
@@ -17,10 +17,10 @@ function EasyLLM({ url = 'https://api.deepseek.com/chat/completions', apiKey }) 
     const callbacks = {
         tool: () => null,
         message: () => null,
-        error: () => null
+        error: () => null,
     };
     const others = {
-        signal: new AbortController()
+        signal: new AbortController(),
     };
     const returnObject = {
         tool: (tool) => {
@@ -46,13 +46,13 @@ function EasyLLM({ url = 'https://api.deepseek.com/chat/completions', apiKey }) 
                 functions,
                 others,
                 tools,
-                body
+                body,
             });
             return returnObject;
         },
         abort: () => {
             others.signal.abort();
-        }
+        },
     };
     return returnObject;
 }

@@ -2,14 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SendRequest = void 0;
 exports.normalizeChatMessage = normalizeChatMessage;
-const SendRequest = async ({ callbacks, functions, others, tools, axios, body }) => {
+const SendRequest = async ({ callbacks, functions, others, tools, axios, body, }) => {
     try {
         let status = true;
         body.tools = tools;
         while (status) {
             const controller = new AbortController();
             others.signal = controller;
-            const { data } = await axios.post("", body, { signal: controller.signal });
+            const { data } = await axios.post('', body, { signal: controller.signal });
             const message = data.choices[0].message;
             const { tool_calls } = message;
             body.messages.push(normalizeChatMessage(message));
@@ -21,7 +21,7 @@ const SendRequest = async ({ callbacks, functions, others, tools, axios, body })
                     body.messages.push({
                         role: 'tool',
                         tool_call_id: tool_call.id,
-                        content: await functions[tool_call.function.name](tool_call.function.arguments)
+                        content: await functions[tool_call.function.name](tool_call.function.arguments),
                     });
                 }
                 // console.dir(body.messages, { depth: 1000 }); // debug
@@ -50,7 +50,7 @@ function normalizeChatMessage(msg) {
     const safeMessage = {
         role: msg.role,
         content: msg.content === undefined
-            ? ""
+            ? ''
             : typeof msg.content === 'object'
                 ? JSON.stringify(msg.content)
                 : msg.content,

@@ -1,104 +1,113 @@
-import { AxiosResponse } from "axios";
-import { ChatCompletionMessage, ChatCompletionRequest, ChatCompletionResponse, ChatMessage, SendFunction } from "../../../types";
+import { AxiosResponse } from 'axios';
+import {
+  ChatCompletionMessage,
+  ChatCompletionRequest,
+  ChatCompletionResponse,
+  ChatMessage,
+  SendFunction,
+} from '../../../types';
 
-export const SendRequest: SendFunction = async ({ callbacks, functions, others, tools, axios, body }) => {
-    try {
-        let status = true;
+export const SendRequest: SendFunction = async ({
+  callbacks,
+  functions,
+  others,
+  tools,
+  axios,
+  body,
+}) => {
+  try {
+    let status = true;
 
-        body.tools = tools;
+    body.tools = tools;
 
+    while (status) {
+      const controller = new AbortController();
 
-        while (status) {
+      others.signal = controller;
 
-            const controller = new AbortController();
+      const { data } = await axios.post<
+        ChatCompletionRequest,
+        AxiosResponse<ChatCompletionResponse>
+      >('', body, { signal: controller.signal });
 
-            others.signal = controller;
+      const message = data.choices[0].message;
 
-            const { data } = await axios.post<ChatCompletionRequest, AxiosResponse<ChatCompletionResponse>>("", body, { signal: controller.signal });
+      const { tool_calls } = message;
 
+      body.messages.push(normalizeChatMessage(message as any));
 
-            const message = data.choices[0].message
+      if (tool_calls?.length) {
+        callbacks.tool(message as any);
 
-            const { tool_calls } = message;
+        for (let index = 0; index < tool_calls.length; index++) {
+          const tool_call = tool_calls[index];
 
-            body.messages.push(normalizeChatMessage(message as any));
+          tool_call.function.arguments = parseArguments(tool_call.function.arguments);
 
-
-            if (tool_calls?.length) {
-                callbacks.tool(message as any)
-
-                for (let index = 0; index < tool_calls.length; index++) {
-                    const tool_call = tool_calls[index];
-
-                    tool_call.function.arguments = parseArguments(tool_call.function.arguments);
-
-                    body.messages.push({
-                        role: 'tool',
-                        tool_call_id: tool_call.id,
-                        content: await functions[tool_call.function.name](tool_call.function.arguments as any)
-                    });
-
-
-                }
-                // console.dir(body.messages, { depth: 1000 }); // debug
-                continue;
-            }
-
-            callbacks.message(message as any)
-            status = false;
+          body.messages.push({
+            role: 'tool',
+            tool_call_id: tool_call.id,
+            content: await functions[tool_call.function.name](tool_call.function.arguments as any),
+          });
         }
-    }
-    catch (err: any) {
-        callbacks.error(err)
-    }
-}
+        // console.dir(body.messages, { depth: 1000 }); // debug
+        continue;
+      }
 
+      callbacks.message(message as any);
+      status = false;
+    }
+  } catch (err: any) {
+    callbacks.error(err);
+  }
+};
 
 function parseArguments(args: any) {
-    if (typeof args === 'object') return args;
+  if (typeof args === 'object') return args;
 
-    try {
-        return JSON.parse(args);
-    }
-    catch {
-        return args
-    }
+  try {
+    return JSON.parse(args);
+  } catch {
+    return args;
+  }
 }
 
-export function normalizeChatMessage(msg: ChatMessage & ChatCompletionMessage): ChatMessage & ChatCompletionMessage {
-    const safeMessage: ChatMessage & ChatCompletionMessage = {
-        role: msg.role,
-        content:
-            msg.content === undefined
-                ? ""
-                : typeof msg.content === 'object'
-                    ? JSON.stringify(msg.content)
-                    : msg.content,
-    };
+export function normalizeChatMessage(
+  msg: ChatMessage & ChatCompletionMessage,
+): ChatMessage & ChatCompletionMessage {
+  const safeMessage: ChatMessage & ChatCompletionMessage = {
+    role: msg.role,
+    content:
+      msg.content === undefined
+        ? ''
+        : typeof msg.content === 'object'
+          ? JSON.stringify(msg.content)
+          : msg.content,
+  };
 
-    // Copy optional fields if they exist
-    if ('tool_call_id' in msg && msg.tool_call_id) {
-        safeMessage.tool_call_id = msg.tool_call_id;
-    }
+  // Copy optional fields if they exist
+  if ('tool_call_id' in msg && msg.tool_call_id) {
+    safeMessage.tool_call_id = msg.tool_call_id;
+  }
 
-    if ('reasoning_content' in msg && msg.reasoning_content) {
-        safeMessage.reasoning_content = msg.reasoning_content;
-    }
+  if ('reasoning_content' in msg && msg.reasoning_content) {
+    safeMessage.reasoning_content = msg.reasoning_content;
+  }
 
-    // Normalize tool calls if present
-    if (msg.tool_calls?.length) {
-        safeMessage.tool_calls = msg.tool_calls.map((call) => ({
-            ...call,
-            function: {
-                ...call.function,
-                // ✅ Always ensure arguments are JSON string
-                arguments:
-                    typeof call.function.arguments === 'string'
-                        ? call.function.arguments
-                        : JSON.stringify(call.function.arguments ?? {}),
-            },
-        }));
-    }
+  // Normalize tool calls if present
+  if (msg.tool_calls?.length) {
+    safeMessage.tool_calls = msg.tool_calls.map((call) => ({
+      ...call,
+      function: {
+        ...call.function,
+        // ✅ Always ensure arguments are JSON string
+        arguments:
+          typeof call.function.arguments === 'string'
+            ? call.function.arguments
+            : JSON.stringify(call.function.arguments ?? {}),
+      },
+    }));
+  }
 
-    return safeMessage;
+  return safeMessage;
 }

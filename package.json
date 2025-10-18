@@ -14,11 +14,21 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write .",
-    "test": "ts-node src/test/app.ts",
-    "test:ollama": "ts-node src/test/ollama.ts"
+    "test": "ts-node test/app.ts",
+    "test:ollama": "ts-node test/ollama.ts"
   },
-  "keywords": [],
-  "author": "Hussain Nazarnejad",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arna051/easy-llm.git"
+  },
+  "keywords": [
+    "llm",
+    "deepseek",
+    "ai",
+    "tools",
+    "typescript"
+  ],
+  "author": "Arna051",
   "license": "MIT",
   "type": "commonjs",
   "devDependencies": {

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toolRegister = toolRegister;
-function toolRegister({ tools, functions, tool }) {
+function toolRegister({ tools, functions, tool, }) {
     const cookedTool = {
         type: 'function',
         function: {

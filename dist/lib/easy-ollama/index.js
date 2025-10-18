@@ -7,7 +7,7 @@ exports.EasyOllama = EasyOllama;
 const axios_1 = __importDefault(require("axios"));
 const send_1 = require("./send");
 const utils_1 = require("../easy-llm/utils");
-const DEFAULT_OLLAMA_URL = "http://localhost:11434/api/chat";
+const DEFAULT_OLLAMA_URL = 'http://localhost:11434/api/chat';
 function EasyOllama({ url = DEFAULT_OLLAMA_URL, headers } = {}) {
     const https = axios_1.default.create({
         baseURL: url,

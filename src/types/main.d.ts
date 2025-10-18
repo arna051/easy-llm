@@ -1,8 +1,8 @@
 export type EasyLLMProps = {
-    url?: string
-    apiKey?: string
-}
+  url?: string;
+  apiKey?: string;
+};
 
 export type OtherProps = {
-    signal: AbortController
-}
+  signal: AbortController;
+};
