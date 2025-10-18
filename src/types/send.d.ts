@@ -1,0 +1,17 @@
+import { AxiosInstance } from "axios"
+import { ChatCompletionRequest } from "./body"
+import { OtherProps } from "./main"
+import { Callbacks } from "./message"
+import { FunctionAny, LLMToolSchema } from "./tool"
+
+export type SendFunctionProps = {
+    others: OtherProps
+    callbacks: Callbacks
+    tools: LLMToolSchema[],
+    functions: Record<string, FunctionAny>
+    axios: AxiosInstance,
+    body: ChatCompletionRequest
+}
+export type SendFunction = (props: SendFunctionProps) => Promise<any>
+
+export type SendProps = Omit<ChatCompletionRequest, "tools">
