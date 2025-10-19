@@ -1,6 +1,6 @@
 {
   "name": "easy-llm-call",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "an easy way to make call to LLMs with function call and tools. tested by: Deepseek, openAI, ollama",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,7 +8,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r src/types ./dist",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "lint": "eslint . --ext .ts",
