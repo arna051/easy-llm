@@ -1,6 +1,6 @@
 {
   "name": "easy-llm-call",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "an easy way to make call to LLMs with function call and tools. tested by: Deepseek, openAI, ollama",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,6 +20,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/arna051/easy-llm.git"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./react": "./dist/react/index.js"
   },
   "keywords": [
     "llm",
