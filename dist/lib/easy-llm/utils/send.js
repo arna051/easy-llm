@@ -2,37 +2,57 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SendRequest = void 0;
 exports.normalizeChatMessage = normalizeChatMessage;
-const SendRequest = async ({ callbacks, functions, others, tools, axios, body, }) => {
+const retry_1 = require("../../../utils/retry");
+const SendRequest = async ({ callbacks, functions, others, tools, axios, body, betweenRequestDelay, retries, retryDelay, }) => {
     try {
         let status = true;
         body.tools = tools;
+        callbacks.onStateChange(true);
         while (status) {
             const controller = new AbortController();
             others.signal = controller;
-            const { data } = await axios.post('', body, { signal: controller.signal });
+            const { data } = await (0, retry_1.axiosWithRetry)(axios, body, controller, retries, retryDelay);
             const message = data.choices[0].message;
             const { tool_calls } = message;
             body.messages.push(normalizeChatMessage(message));
             if (tool_calls?.length) {
-                callbacks.tool(message);
+                callbacks.onMessage(message);
                 for (let index = 0; index < tool_calls.length; index++) {
                     const tool_call = tool_calls[index];
                     tool_call.function.arguments = parseArguments(tool_call.function.arguments);
-                    body.messages.push({
-                        role: 'tool',
-                        tool_call_id: tool_call.id,
-                        content: await functions[tool_call.function.name](tool_call.function.arguments),
-                    });
+                    callbacks.onToolCall(tool_call.id, tool_call.function.name, tool_call.function.arguments);
+                    try {
+                        const content = await functions[tool_call.function.name](tool_call.function.arguments);
+                        callbacks.onToolResult(tool_call.id, tool_call.function.name, content);
+                        body.messages.push({
+                            role: 'tool',
+                            tool_call_id: tool_call.id,
+                            content,
+                        });
+                    }
+                    catch (err) {
+                        callbacks.onToolError(tool_call.id, tool_call.function.name, err);
+                        body.messages.push({
+                            role: 'tool',
+                            tool_call_id: tool_call.id,
+                            content: `Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
+                        });
+                    }
                 }
-                // console.dir(body.messages, { depth: 1000 }); // debug
+                if (betweenRequestDelay) {
+                    await new Promise((res) => setTimeout(res, betweenRequestDelay));
+                }
                 continue;
             }
-            callbacks.message(message);
+            callbacks.onMessage(message);
             status = false;
         }
     }
     catch (err) {
-        callbacks.error(err);
+        callbacks.onError(err);
+    }
+    finally {
+        callbacks.onStateChange(false);
     }
 };
 exports.SendRequest = SendRequest;

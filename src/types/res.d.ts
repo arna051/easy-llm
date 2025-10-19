@@ -6,12 +6,14 @@ export interface LLMToolCall {
     arguments: string; // raw JSON string
   };
 }
-
+export type ChatRole = 'system' | 'user' | 'assistant' | 'tool';
 export interface ChatCompletionMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool';
+  role: ChatRole;
   content: string | null;
   tool_calls?: LLMToolCall[];
   reasoning_content?: string | null; // deepseek-reasoner models
+  tool_call_id?: string;
+  name?: string;
 }
 
 export interface ChatCompletionChoice {

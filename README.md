@@ -1,261 +1,339 @@
-# 🎩 Easy LLM Tool Manager
+# easy-llm-call
 
-> Build function-calling copilots in minutes with a fluent TypeScript API that speaks to hosted clouds (DeepSeek, OpenAI-compatible) and your local Ollama models alike.
+![easy-llm-call banner](https://images.contentstack.io/v3/assets/bltac01ee6daa3a1e14/bltef59cf5734b5c965/67e3ca9ab9f9a67f5adc5547/img_blog_BP-Run-DeepSeek-R1-Locally-and-Build-RAG-Applications_feature.png?width=736&disable=upscale&auto=webp)
 
----
+> Build tool-aware LLM workflows in Node.js or React with a few lines of code.
 
 ## Table of Contents
 
-- [✨ Overview](#-overview)
-- [📦 Installation](#-installation)
-- [🚀 Quick Start](#-quick-start)
-  - [Node Usage](#node-usage)
-  - [React Hook Example](#react-hook-example)
-  - [Plain Browser Example](#plain-browser-example)
-- [🧩 Why Easy LLM?](#-why-easy-llm)
-- [🛠️ Tool Recipes](#-tool-recipes)
-- [🤝 Supported Providers](#-supported-providers)
-- [⚙️ API Surface](#-api-surface)
-- [🧪 Local Sandbox (Ollama)](#-local-sandbox-ollama)
-- [🛟 Troubleshooting](#-troubleshooting)
-- [📄 License](#-license)
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Package Layout](#package-layout)
+- [Installation](#installation)
+- [Quick Start – DeepSeek / OpenAI Style](#quick-start--deepseek--openai-style)
+- [Quick Start – Ollama (local)](#quick-start--ollama-local)
+- [React Hooks](#react-hooks)
+- [Tool Recipes](#tool-recipes)
+- [Configuration Reference](#configuration-reference)
+- [Callbacks & Lifecycle](#callbacks--lifecycle)
+- [Error Handling](#error-handling)
+- [Development & Testing](#development--testing)
+- [License](#license)
 
----
+## Overview
 
-## ✨ Overview
+`easy-llm-call` wraps common LLM/chat-completion patterns (including function/tool calling) behind a compact API. It ships with:
 
-- Fluent builder that wires **chat completions + function calling** without ceremony.
-- Drop-in support for **DeepSeek**, **OpenAI-compatible** endpoints, and a dedicated **Ollama streaming** client.
-- Ergonomic callbacks for **tool invocations**, **assistant replies**, and **error handling**.
-- Ships with TypeScript declarations so IDEs guide your tool shapes and chat payloads.
+- **EasyLLM**: drop-in client for OpenAI-compatible HTTP chat endpoints (tested with DeepSeek).
+- **EasyOllama**: local Ollama chat client with tool calling support.
+- **React hooks** that manage message history, loading states, errors, and tool wiring.
+- A shared toolkit for registering tools, retrying calls, aborting requests, and normalizing messages.
 
----
+Use this package when you want tooling-enabled assistants across hosted or local models without re-implementing the control loop.
 
-## 📦 Installation
+## Key Features
 
-```bash
-npm install easy-llm
-# or
-yarn add easy-llm
-# or
-pnpm add easy-llm
+- Tool/function calling with automatic argument parsing and tool result injection.
+- Configurable retry strategy with exponential-style delays.
+- Abortable requests via `AbortController`.
+- Unified callback interface for streaming UI updates or server logging.
+- TypeScript-first design with ambient type definitions for every surface area.
+- React hooks (`useEasyLLM`, `useEasyOllama`) to integrate assistants in minutes.
+
+## Package Layout
+
+```
+src/
+├── lib/
+│   ├── easy-llm/        # Hosted LLM helper (DeepSeek, OpenAI-compatible)
+│   └── easy-ollama/     # Local Ollama helper with tool calling
+├── react/
+│   └── components/      # React hooks for both helpers
+├── types/               # Shared ambient type definitions
+└── utils/               # axios retry helper
+test/
+├── app.ts               # Interactive EasyLLM demo (DeepSeek, OpenAI, etc.)
+└── ollama.ts            # Interactive EasyOllama demo
 ```
 
-The package exposes CommonJS builds (`dist/`) with bundled type definitions.
+All public exports flow through:
 
----
+- `src/lib/index.ts` → `EasyLLM`, `EasyOllama`
+- `src/react/index.ts` → `useEasyLLM`, `useEasyOllama`
+- `src/types/index.d.ts` → ambient types for library consumers
 
-## 🚀 Quick Start
+## Installation
 
-### Node Usage
+```bash
+npm install easy-llm-call
+# or
+yarn add easy-llm-call
+```
+
+Peer dependency: `react >= 17` (only needed for hook usage).
+
+## Quick Start – DeepSeek / OpenAI Style
 
 ```ts
-import { EasyLLM } from 'easy-llm';
+import { EasyLLM } from 'easy-llm-call';
 
-const client = EasyLLM({
+const llm = EasyLLM({
   apiKey: process.env.DEEPSEEK_API_KEY,
-  // url: "https://api.openai.com/v1/chat/completions", // optional override
+  url: 'https://api.deepseek.com/chat/completions',
 })
-  .tool({
-    name: 'get_time',
-    desc: 'Returns the current ISO timestamp.',
+  .registerTool('get_time', {
+    desc: 'Return the current ISO timestamp',
     func: () => new Date().toISOString(),
   })
-  .tool({
-    name: 'lookupWeather',
-    desc: 'Fetches weather from a custom service.',
-    props: {
-      city: { type: 'string', desc: 'City to inspect', required: true },
-      units: { type: 'string', desc: 'Units (metric|imperial)' },
-    },
-    func: async ({ city, units = 'metric' }) => {
-      // your business logic here
-      return `It is always sunny in ${city} (units: ${units}).`;
-    },
-  })
-  .onCall((call) => {
-    console.info('🔧 Tool call:', call.tool_call_id, call.content ?? '');
-  })
   .onMessage((message) => {
-    console.info('🤖 Assistant:', message.content);
+    console.log('[assistant]', message.content);
   })
-  .onError((error) => {
-    console.error('💥 LLM error:', error);
+  .onToolCall((id, name, args) => {
+    console.log('[tool call]', { id, name, args });
+  })
+  .onToolResult((id, name, result) => {
+    console.log('[tool result]', { id, name, result });
+  })
+  .onError((err) => {
+    console.error('[error]', err);
   });
 
-await client.send({
+llm.send({
   model: 'deepseek-chat',
-  messages: [
-    { role: 'system', content: 'You are a helpful concierge.' },
-    { role: 'user', content: 'Can you plan my afternoon?' },
-  ],
   tool_choice: 'auto',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'What time is it in UTC?' },
+  ],
 });
 ```
 
-### React Hook Example
+## Quick Start – Ollama (local)
+
+```ts
+import { EasyOllama } from 'easy-llm-call';
+
+const ollama = EasyOllama({
+  url: 'http://127.0.0.1:11434/api/chat', // default
+})
+  .registerTool('get_weather', {
+    desc: 'Fetches weather for a city',
+    props: {
+      city: { desc: 'City name', required: true },
+    },
+    func: async ({ city }) => {
+      // call your own weather API here
+      return `Weather for ${city} is 22°C and sunny`;
+    },
+  })
+  .onMessage((message) => console.log('[assistant]', message.content))
+  .onToolCall((id, name, args) => console.log('[tool call]', { id, name, args }))
+  .onError((err) => console.error(err));
+
+ollama.send({
+  model: 'llama3.1:8b',
+  tool_choice: 'auto',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'Should I carry an umbrella in Tokyo today?' },
+  ],
+});
+```
+
+> ℹ️ The Ollama API must be running locally with a model that supports tool/function calling.
+
+## React Hooks
 
 ```tsx
-import { useEffect, useState } from 'react';
-import { EasyLLM } from 'easy-llm';
+import { useEasyLLM } from 'easy-llm-call/react';
 
-export function ConciergeExample() {
-  const [assistant, setAssistant] = useState<string>('Thinking…');
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    const messages = [
-      { role: 'system', content: 'You are a succinct trip planner.' },
-      { role: 'user', content: 'Create a walking itinerary for Seoul.' },
-    ];
-
-    const client = EasyLLM({ apiKey: import.meta.env.VITE_DEEPSEEK_KEY })
-      .tool({
-        name: 'open_map',
-        desc: 'Opens a map at a specific coordinate.',
-        props: {
-          lat: { type: 'number', required: true },
-          lng: { type: 'number', required: true },
-        },
-        func: async ({ lat, lng }) => {
-          window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank');
-          return 'Map opened in a new tab.';
-        },
-      })
-      .onCall(() => setBusy(true))
-      .onMessage((resp) => {
-        setAssistant(resp.content);
-        setBusy(false);
-      })
-      .onError((err) => {
-        console.error(err);
-        setAssistant('Something went wrong.');
-        setBusy(false);
-      });
-
-    client.send({ model: 'deepseek-chat', messages, tool_choice: 'auto' });
-    return () => client.abort();
-  }, []);
+export function ChatWidget() {
+  const {
+    messages,
+    loading,
+    send,
+    errors: { axiosErrors, toolErrors },
+  } = useEasyLLM({
+    apiKey: process.env.DEEPSEEK_API_KEY!,
+    systemPrompt: 'You are a friendly concierge.',
+    tools: [
+      {
+        name: 'get_time',
+        desc: 'Return current ISO timestamp',
+        func: () => new Date().toISOString(),
+      },
+    ],
+  });
 
   return (
-    <section>
-      <p>{assistant}</p>
-      {busy && <span>🔄 calling tools…</span>}
-    </section>
+    <div>
+      <ul>
+        {messages.map(({ role, content, timestamp }) => (
+          <li key={timestamp}>
+            <strong>{role}:</strong> {content}
+          </li>
+        ))}
+      </ul>
+      <button disabled={loading} onClick={() => send({
+        message: { role: 'user', content: 'Ping!' },
+        model: 'deepseek-chat',
+        tool_choice: 'auto',
+      })}>
+        {loading ? 'Waiting…' : 'Send'}
+      </button>
+      {axiosErrors.length > 0 && <pre>{axiosErrors.at(-1)?.message}</pre>}
+      {toolErrors.length > 0 && <pre>{toolErrors.at(-1)?.message}</pre>}
+    </div>
   );
 }
 ```
 
-> The library is CommonJS; for Vite/Next bundlers make sure you enable CJS interop (default in most modern setups).
+The hook mirrors the plain factory API while maintaining stateful message history, loading flags, and error buckets for UI binding.
 
-### Plain Browser Example
+An equivalent `useEasyOllama` hook targets local models:
 
-```html
-<script type="module">
-  import EasyLLMModule from 'https://cdn.skypack.dev/easy-llm';
-  const { EasyLLM } = EasyLLMModule;
+```tsx
+import { useEasyOllama } from 'easy-llm-call/react';
 
-  const client = EasyLLM({ apiKey: window.DEEPSEEK_KEY })
-    .tool({
-      name: 'show_alert',
-      desc: 'Displays a friendly alert dialog.',
-      func: ({ message }) => {
-        alert(message ?? 'Hello from Easy LLM!');
-        return 'Alert was shown to the user.';
-      },
-    })
-    .onMessage((msg) => {
-      document.body.insertAdjacentHTML('beforeend', `<pre>${msg.content}</pre>`);
-    });
-
-  client.send({
-    model: 'deepseek-chat',
-    messages: [
-      { role: 'system', content: 'You control the UI via tools.' },
-      { role: 'user', content: 'Say hi to the visitor.' },
-    ],
-    tool_choice: 'auto',
-  });
-</script>
+const { messages, send } = useEasyOllama({
+  systemPrompt: 'You are a local assistant.',
+  tools: [
+    {
+      name: 'echo',
+      desc: 'Return the same text back',
+      props: { text: { required: true } },
+      func: ({ text }) => text,
+    },
+  ],
+});
 ```
 
-> For production you should proxy your API key server-side. The snippet above is purely illustrative for demos and local prototypes.
+## Tool Recipes
 
----
+### 1. Basic synchronous tool
 
-## 🧩 Why Easy LLM?
+```ts
+llm.registerTool('get_version', {
+  desc: 'Return Node.js version',
+  func: () => process.version,
+});
+```
 
-- **Chainable ergonomics** – register tools, add callbacks, and send messages in one fluent expression.
-- **Strong typing** – helper types (`ChatMessage`, `AddToolProps`, etc.) make TypeScript autocompletion delightful.
-- **Abort-aware** – cancel long-running interactions with `abort()` (automatically refreshed per request).
-- **Tool normalization** – JSON arguments are sanitized so your functions always receive real objects.
-- **Streaming-friendly** – the Ollama client parses line-delimited JSON chunks and routes tool calls automatically.
+### 2. Tools with typed parameters
 
----
+```ts
+llm.registerTool('calculate_bmi', {
+  desc: 'Compute BMI from height and weight',
+  props: {
+    height_cm: { type: 'number', required: true },
+    weight_kg: { type: 'number', required: true },
+  },
+  func: ({ height_cm, weight_kg }) => {
+    const meters = height_cm / 100;
+    return (weight_kg / (meters * meters)).toFixed(2);
+  },
+});
+```
 
-## 🛠️ Tool Recipes
+### 3. Async tools that call external APIs
 
-- **Dynamic schemas**: pass `props` to describe argument types, `required` fields, and inline docs. The library emits OpenAI-compatible JSON Schema on the wire.
-- **Side-effect tools**: return anything serializable; the assistant receives the value as tool output.
-- **Multi-tool orchestration**: call `.tool(...)` repeatedly—the registry keeps both the schema sent to the LLM and the implementation map.
-- **Graceful fallbacks**: use `.onCall` to surface loading indicators while your UI waits on tool results.
+```ts
+llm.registerTool('search_docs', {
+  desc: 'Search documentation',
+  props: { query: { required: true } },
+  func: async ({ query }) => {
+    const res = await fetch('https://docs.example.com/search?q=' + encodeURIComponent(query));
+    const { results } = await res.json();
+    return results.slice(0, 3);
+  },
+});
+```
 
----
+### 4. Shared tool registry
 
-## 🤝 Supported Providers
+Create a reusable helper:
 
-- **`EasyLLM`** – default target is `https://api.deepseek.com/chat/completions`; override `url` for OpenAI, dify, or any compatible Chat Completions endpoint.
-- **`EasyOllama`** – speaks to a local Ollama instance (`http://localhost:11434/api/chat`). Handles streaming, JSON-tool detection, and response sanitization out of the box.
+```ts
+// tools.ts
+export const registerCommonTools = (client) =>
+  client
+    .registerTool('get_time', { func: () => new Date().toISOString(), desc: 'Now in ISO' })
+    .registerTool('echo', {
+      desc: 'Echo input text',
+      props: { text: { required: true } },
+      func: ({ text }) => text,
+    });
+```
 
-Both clients share the same tool API, so migrating between cloud and local models is a one-line change.
+```ts
+import { EasyOllama } from 'easy-llm-call';
+import { registerCommonTools } from './tools';
 
----
+const client = registerCommonTools(EasyOllama());
+```
 
-## ⚙️ API Surface
+## Configuration Reference
 
-### `EasyLLM(options?: { url?: string; apiKey?: string })`
+### Factory options
 
-- `tool({ name, desc, func, props })` – register a function callable by the model.
-- `onCall(callback)` – firing whenever the model requests a tool (great for progress UX).
-- `onMessage(callback)` – receives assistant messages once the conversation resolves.
-- `onError(callback)` – central place for Axios/LLM errors.
-- `send({ model, messages, tool_choice, ... })` – triggers the request; returns the fluent interface for chaining.
-- `abort()` – cancel the in-flight request.
+| Option               | EasyLLM | EasyOllama | Default                                | Notes                               |
+|----------------------|---------|------------|----------------------------------------|-------------------------------------|
+| `url`                | ✔       | ✔          | DeepSeek / http://127.0.0.1:11434/api/chat | Override API endpoint               |
+| `apiKey`             | ✔       | ✖          | `undefined`                            | Injected in `Authorization` header  |
+| `headers`            | ✖       | ✔          | `{}`                                   | Extra headers for Ollama            |
+| `timeoutMS`          | ✔       | ✔          | 180000                                  | Axios request timeout               |
+| `retries`            | ✔       | ✔          | 3                                      | Number of retry attempts            |
+| `retryDelay`         | ✔       | ✔          | 1000                                   | Delay between retries (ms)          |
+| `betweenRequestDelay`| ✔       | ✔          | 0                                      | Sleep after tool calls before retry |
 
-### `EasyOllama(options?: { url?: string; headers?: Record<string,string> })`
+### `send(...)` payload
 
-- Mirrors the `EasyLLM` surface but targets streaming Ollama sessions. Each call automatically injects a system instruction explaining available tools.
+Both helpers expect objects compatible with their respective chat endpoints:
 
-Refer to `src/types/` for the full TypeScript definitions shipped with the package.
+- `EasyLLM.send(request)` matches OpenAI/DeepSeek `ChatCompletionRequest`
+- `EasyOllama.send(request)` matches the Ollama `/api/chat` payload
 
----
+Common fields:
 
-## 🧪 Local Sandbox (Ollama)
+- `model` – required model name.
+- `messages` – array of chat messages; tools inject tool responses automatically.
+- `tools` – optional, auto-populated from registered tool schemas.
+- `tool_choice` – `'auto' | 'none' | string` to control invocation.
+
+## Callbacks & Lifecycle
+
+Every factory exposes chainable listeners:
+
+- `onMessage(message)` – fires for assistant messages (including tool-call previews).
+- `onError(error)` – called once per failing request (after retries exhausted).
+- `onStateChange(loading)` – toggles `true/false` around request cycles.
+- `onToolCall(id, toolName, args)` – before executing a registered tool.
+- `onToolResult(id, toolName, result)` – after tool resolves.
+- `onToolError(id, toolName, error)` – when a tool throws/errors.
+
+Return value from `registerTool` and `send` is the same client, enabling fluent chaining.
+
+## Error Handling
+
+- Network failures are retried using `axiosWithRetry` (see `src/utils/retry.ts`).
+- Tool exceptions are captured, forwarded to callbacks, and converted into synthetic tool messages so the model can react.
+- To cancel a long-running request, invoke `client.abort()`. The current `AbortController` is swapped in before each call.
+
+## Development & Testing
 
 ```bash
-# run a model locally
-ollama pull deepseek-r1:7b
-ollama serve
+# Build TypeScript
+npm run build
 
-# in another terminal
-npx ts-node src/test/ollama.ts deepseek-r1:7b
+# Interactive DeepSeek-style demo
+npm run test -- "<YOUR_MODEL_KEY>"
+
+# Interactive Ollama demo (model, endpoint optional)
+npm run test:ollama llama3.1:8b
 ```
 
-The example registers a `get_time` tool, relays streaming output, and showcases how EasyOllama loops until the assistant provides a final answer.
+During development you may inspect the TypeScript sources directly (`src/`); compiled JavaScript and declaration files live in `dist/`.
 
----
+## License
 
-## 🛟 Troubleshooting
-
-- **401 / unauthorized** – confirm the `apiKey` is set and the target endpoint expects Bearer tokens.
-- **Hanging requests** – use `abort()` or set `tool_choice: "none"` when you do not intend to invoke functions.
-- **Tool schema mismatch** – double-check `props` definitions; required fields must align with the arguments returned by your tool function.
-- **Bundlers** – when consuming from ESM-only environments, enable CommonJS interop or import from `dist/index.js` directly.
-
----
-
-## 📄 License
-
-MIT © Hussain Nazarnejad
-
-Crafted with ❤️ to make LLM function calling _easy_.
+MIT © Arna051

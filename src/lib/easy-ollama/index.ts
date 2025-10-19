@@ -1,68 +1,97 @@
 import axios from 'axios';
 import {
   AddToolProps,
+  Callbacks,
+  EasyOllamaProps,
   FunctionAny,
   LLMToolSchema,
-  OnToolCallCallback,
-  OnResponseCallCallback,
+  OllamaSendProps,
   OnErrorCallback,
+  OnLoadingCallback,
+  OnResponseCallCallback,
+  OnToolCallingCallback,
+  OnToolErrorCallback,
+  OnToolResultCallback,
+  OtherProps,
 } from '../../types';
-import { EasyOllamaProps, OllamaCallbacks, OllamaSendProps } from '../../types/ollama';
-import { sendRequest } from './send';
 import { toolRegister } from '../easy-llm/utils';
+import { SendRequest } from './utils';
 
-const DEFAULT_OLLAMA_URL = 'http://localhost:11434/api/chat';
-
-export function EasyOllama({ url = DEFAULT_OLLAMA_URL, headers }: EasyOllamaProps = {}) {
+export function EasyOllama({
+  url = 'http://127.0.0.1:11434/api/chat',
+  timeoutMS = 1e3 * 60 * 3,
+  retries = 3,
+  retryDelay = 1e3,
+  betweenRequestDelay = 0,
+  headers = {},
+}: EasyOllamaProps = {}) {
   const https = axios.create({
     baseURL: url,
     headers,
-    timeout: 1e3 * 60 * 10,
+    timeout: timeoutMS,
   });
 
   const tools: LLMToolSchema[] = [];
   const functions: Record<string, FunctionAny> = {};
 
-  const callbacks: OllamaCallbacks = {
-    tool: () => null,
-    message: () => null,
-    error: () => null,
+  const callbacks: Callbacks = {
+    onMessage: () => null,
+    onError: () => null,
+    onStateChange: () => null,
+    onToolCall: () => null,
+    onToolError: () => null,
+    onToolResult: () => null,
   };
 
-  const others = { signal: new AbortController() };
+  const others: OtherProps = {
+    signal: new AbortController(),
+  };
 
   const returnObject = {
-    tool(tool: AddToolProps) {
-      toolRegister({ tools, functions, tool });
+    registerTool: (name: string, tool: Omit<AddToolProps, 'name'>) => {
+      toolRegister({ tools, functions, tool: { ...tool, name } });
       return returnObject;
     },
-    onCall(callback: OnToolCallCallback) {
-      callbacks.tool = callback;
+    onMessage: (callback: OnResponseCallCallback) => {
+      callbacks.onMessage = callback;
       return returnObject;
     },
-    onMessage(callback: OnResponseCallCallback) {
-      callbacks.message = callback;
+    onError: (callback: OnErrorCallback) => {
+      callbacks.onError = callback;
       return returnObject;
     },
-    onError(callback: OnErrorCallback) {
-      callbacks.error = callback;
+    onStateChange: (callback: OnLoadingCallback) => {
+      callbacks.onStateChange = callback;
       return returnObject;
     },
-    send(body: OllamaSendProps) {
-      sendRequest({
+    onToolCall: (callback: OnToolCallingCallback) => {
+      callbacks.onToolCall = callback;
+      return returnObject;
+    },
+    onToolError: (callback: OnToolErrorCallback) => {
+      callbacks.onToolError = callback;
+      return returnObject;
+    },
+    onToolResult: (callback: OnToolResultCallback) => {
+      callbacks.onToolResult = callback;
+      return returnObject;
+    },
+    send: (body: OllamaSendProps) => {
+      SendRequest({
         axios: https,
         callbacks,
-        body,
+        functions,
         others,
         tools,
-        functions,
+        body,
+        betweenRequestDelay,
+        retries,
+        retryDelay,
       });
       return returnObject;
     },
-    abort() {
+    abort: () => {
       others.signal.abort();
-      others.signal = new AbortController();
-      return returnObject;
     },
   };
 

@@ -5,55 +5,72 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EasyOllama = EasyOllama;
 const axios_1 = __importDefault(require("axios"));
-const send_1 = require("./send");
 const utils_1 = require("../easy-llm/utils");
-const DEFAULT_OLLAMA_URL = 'http://localhost:11434/api/chat';
-function EasyOllama({ url = DEFAULT_OLLAMA_URL, headers } = {}) {
+const utils_2 = require("./utils");
+function EasyOllama({ url = 'http://127.0.0.1:11434/api/chat', timeoutMS = 1e3 * 60 * 3, retries = 3, retryDelay = 1e3, betweenRequestDelay = 0, headers = {}, } = {}) {
     const https = axios_1.default.create({
         baseURL: url,
         headers,
-        timeout: 1e3 * 60 * 10,
+        timeout: timeoutMS,
     });
     const tools = [];
     const functions = {};
     const callbacks = {
-        tool: () => null,
-        message: () => null,
-        error: () => null,
+        onMessage: () => null,
+        onError: () => null,
+        onStateChange: () => null,
+        onToolCall: () => null,
+        onToolError: () => null,
+        onToolResult: () => null,
     };
-    const others = { signal: new AbortController() };
+    const others = {
+        signal: new AbortController(),
+    };
     const returnObject = {
-        tool(tool) {
-            (0, utils_1.toolRegister)({ tools, functions, tool });
+        registerTool: (name, tool) => {
+            (0, utils_1.toolRegister)({ tools, functions, tool: { ...tool, name } });
             return returnObject;
         },
-        onCall(callback) {
-            callbacks.tool = callback;
+        onMessage: (callback) => {
+            callbacks.onMessage = callback;
             return returnObject;
         },
-        onMessage(callback) {
-            callbacks.message = callback;
+        onError: (callback) => {
+            callbacks.onError = callback;
             return returnObject;
         },
-        onError(callback) {
-            callbacks.error = callback;
+        onStateChange: (callback) => {
+            callbacks.onStateChange = callback;
             return returnObject;
         },
-        send(body) {
-            (0, send_1.sendRequest)({
+        onToolCall: (callback) => {
+            callbacks.onToolCall = callback;
+            return returnObject;
+        },
+        onToolError: (callback) => {
+            callbacks.onToolError = callback;
+            return returnObject;
+        },
+        onToolResult: (callback) => {
+            callbacks.onToolResult = callback;
+            return returnObject;
+        },
+        send: (body) => {
+            (0, utils_2.SendRequest)({
                 axios: https,
                 callbacks,
-                body,
+                functions,
                 others,
                 tools,
-                functions,
+                body,
+                betweenRequestDelay,
+                retries,
+                retryDelay,
             });
             return returnObject;
         },
-        abort() {
+        abort: () => {
             others.signal.abort();
-            others.signal = new AbortController();
-            return returnObject;
         },
     };
     return returnObject;

@@ -1,11 +1,5 @@
-import { AxiosResponse } from 'axios';
-import {
-  ChatCompletionMessage,
-  ChatCompletionRequest,
-  ChatCompletionResponse,
-  ChatMessage,
-  SendFunction,
-} from '../../../types';
+import { ChatCompletionMessage, SendFunction } from '../../../types';
+import { axiosWithRetry } from '../../../utils/retry';
 
 export const SendRequest: SendFunction = async ({
   callbacks,
@@ -14,21 +8,23 @@ export const SendRequest: SendFunction = async ({
   tools,
   axios,
   body,
+  betweenRequestDelay,
+  retries,
+  retryDelay,
 }) => {
   try {
     let status = true;
 
     body.tools = tools;
 
+    callbacks.onStateChange(true);
+
     while (status) {
       const controller = new AbortController();
 
       others.signal = controller;
 
-      const { data } = await axios.post<
-        ChatCompletionRequest,
-        AxiosResponse<ChatCompletionResponse>
-      >('', body, { signal: controller.signal });
+      const { data } = await axiosWithRetry(axios, body, controller, retries, retryDelay);
 
       const message = data.choices[0].message;
 
@@ -37,28 +33,52 @@ export const SendRequest: SendFunction = async ({
       body.messages.push(normalizeChatMessage(message as any));
 
       if (tool_calls?.length) {
-        callbacks.tool(message as any);
+        callbacks.onMessage(message as any);
 
         for (let index = 0; index < tool_calls.length; index++) {
           const tool_call = tool_calls[index];
 
           tool_call.function.arguments = parseArguments(tool_call.function.arguments);
 
-          body.messages.push({
-            role: 'tool',
-            tool_call_id: tool_call.id,
-            content: await functions[tool_call.function.name](tool_call.function.arguments as any),
-          });
+          callbacks.onToolCall(tool_call.id, tool_call.function.name, tool_call.function.arguments);
+
+          try {
+            const content = await functions[tool_call.function.name](
+              tool_call.function.arguments as any,
+            );
+
+            callbacks.onToolResult(tool_call.id, tool_call.function.name, content);
+
+            body.messages.push({
+              role: 'tool',
+              tool_call_id: tool_call.id,
+              content,
+            });
+          } catch (err) {
+            callbacks.onToolError(tool_call.id, tool_call.function.name, err);
+
+            body.messages.push({
+              role: 'tool',
+              tool_call_id: tool_call.id,
+              content: `Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
+            });
+          }
         }
-        // console.dir(body.messages, { depth: 1000 }); // debug
+
+        if (betweenRequestDelay) {
+          await new Promise((res) => setTimeout(res, betweenRequestDelay));
+        }
+
         continue;
       }
 
-      callbacks.message(message as any);
+      callbacks.onMessage(message as any);
       status = false;
     }
   } catch (err: any) {
-    callbacks.error(err);
+    callbacks.onError(err);
+  } finally {
+    callbacks.onStateChange(false);
   }
 };
 
@@ -72,10 +92,8 @@ function parseArguments(args: any) {
   }
 }
 
-export function normalizeChatMessage(
-  msg: ChatMessage & ChatCompletionMessage,
-): ChatMessage & ChatCompletionMessage {
-  const safeMessage: ChatMessage & ChatCompletionMessage = {
+export function normalizeChatMessage(msg: ChatCompletionMessage): ChatCompletionMessage {
+  const safeMessage: ChatCompletionMessage = {
     role: msg.role,
     content:
       msg.content === undefined

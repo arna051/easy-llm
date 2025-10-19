@@ -11,6 +11,9 @@ export type SendFunctionProps = {
   functions: Record<string, FunctionAny>;
   axios: AxiosInstance;
   body: ChatCompletionRequest;
+  retries: number;
+  retryDelay: number;
+  betweenRequestDelay: number;
 };
 export type SendFunction = (props: SendFunctionProps) => Promise<any>;
 

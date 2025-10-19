@@ -1,10 +1,12 @@
-import { AddToolProps, OnToolCallCallback, OnResponseCallCallback, OnErrorCallback } from '../../types';
-import { EasyOllamaProps, OllamaSendProps } from '../../types/ollama';
-export declare function EasyOllama({ url, headers }?: EasyOllamaProps): {
-    tool(tool: AddToolProps): /*elided*/ any;
-    onCall(callback: OnToolCallCallback): /*elided*/ any;
-    onMessage(callback: OnResponseCallCallback): /*elided*/ any;
-    onError(callback: OnErrorCallback): /*elided*/ any;
-    send(body: OllamaSendProps): /*elided*/ any;
-    abort(): /*elided*/ any;
+import { AddToolProps, EasyOllamaProps, OllamaSendProps, OnErrorCallback, OnLoadingCallback, OnResponseCallCallback, OnToolCallingCallback, OnToolErrorCallback, OnToolResultCallback } from '../../types';
+export declare function EasyOllama({ url, timeoutMS, retries, retryDelay, betweenRequestDelay, headers, }?: EasyOllamaProps): {
+    registerTool: (name: string, tool: Omit<AddToolProps, "name">) => /*elided*/ any;
+    onMessage: (callback: OnResponseCallCallback) => /*elided*/ any;
+    onError: (callback: OnErrorCallback) => /*elided*/ any;
+    onStateChange: (callback: OnLoadingCallback) => /*elided*/ any;
+    onToolCall: (callback: OnToolCallingCallback) => /*elided*/ any;
+    onToolError: (callback: OnToolErrorCallback) => /*elided*/ any;
+    onToolResult: (callback: OnToolResultCallback) => /*elided*/ any;
+    send: (body: OllamaSendProps) => /*elided*/ any;
+    abort: () => void;
 };

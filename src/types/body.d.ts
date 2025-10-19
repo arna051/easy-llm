@@ -1,9 +1,4 @@
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string;
-  name?: string;
-  tool_call_id?: string;
-}
+import { ChatCompletionMessage } from './res';
 
 export interface ResponseFormat {
   type: 'text' | 'json' | string;
@@ -11,7 +6,7 @@ export interface ResponseFormat {
 
 export interface ChatCompletionRequest {
   model: string;
-  messages: ChatMessage[];
+  messages: ChatCompletionMessage[];
 
   // Sampling parameters
   temperature?: number;

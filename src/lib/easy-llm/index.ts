@@ -8,28 +8,38 @@ import {
   Callbacks,
   OnErrorCallback,
   OnResponseCallCallback,
-  OnToolCallCallback,
   SendProps,
+  OnLoadingCallback,
+  OnToolErrorCallback,
+  OnToolResultCallback,
+  OnToolCallingCallback,
 } from '../../types';
 import { SendRequest, toolRegister } from './utils';
 
 export function EasyLLM({
   url = 'https://api.deepseek.com/chat/completions',
   apiKey,
+  betweenRequestDelay = 0,
+  retries = 3,
+  retryDelay = 1e3,
+  timeoutMS = 1e3 * 60 * 3,
 }: EasyLLMProps) {
   const https = axios.create({
     baseURL: url,
     headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
-    timeout: 1e3 * 60 * 10,
+    timeout: timeoutMS,
   });
 
   const tools: LLMToolSchema[] = [];
   const functions: Record<string, FunctionAny> = {};
 
   const callbacks: Callbacks = {
-    tool: () => null,
-    message: () => null,
-    error: () => null,
+    onMessage: () => null,
+    onError: () => null,
+    onStateChange: () => null,
+    onToolCall: () => null,
+    onToolError: () => null,
+    onToolResult: () => null,
   };
 
   const others: OtherProps = {
@@ -37,20 +47,32 @@ export function EasyLLM({
   };
 
   const returnObject = {
-    tool: (tool: AddToolProps) => {
-      toolRegister({ tools, functions, tool });
-      return returnObject;
-    },
-    onCall: (callback: OnToolCallCallback) => {
-      callbacks.tool = callback;
+    registerTool: (name: string, tool: Omit<AddToolProps, 'name'>) => {
+      toolRegister({ tools, functions, tool: { ...tool, name } });
       return returnObject;
     },
     onMessage: (callback: OnResponseCallCallback) => {
-      callbacks.message = callback;
+      callbacks.onMessage = callback;
       return returnObject;
     },
     onError: (callback: OnErrorCallback) => {
-      callbacks.error = callback;
+      callbacks.onError = callback;
+      return returnObject;
+    },
+    onStateChange: (callback: OnLoadingCallback) => {
+      callbacks.onStateChange = callback;
+      return returnObject;
+    },
+    onToolCall: (callback: OnToolCallingCallback) => {
+      callbacks.onToolCall = callback;
+      return returnObject;
+    },
+    onToolError: (callback: OnToolErrorCallback) => {
+      callbacks.onToolError = callback;
+      return returnObject;
+    },
+    onToolResult: (callback: OnToolResultCallback) => {
+      callbacks.onToolResult = callback;
       return returnObject;
     },
     send: (body: SendProps) => {
@@ -61,6 +83,9 @@ export function EasyLLM({
         others,
         tools,
         body,
+        betweenRequestDelay,
+        retries,
+        retryDelay,
       });
       return returnObject;
     },
