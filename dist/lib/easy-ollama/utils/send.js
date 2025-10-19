@@ -52,6 +52,11 @@ const SendRequest = async ({ callbacks, functions, others, tools, axios, body, b
                             tool_call_id: toolCallId,
                             content: stringifyToolContent(content),
                         });
+                        callbacks.onMessage({
+                            role: 'tool',
+                            tool_call_id: toolCallId,
+                            content: stringifyToolContent(content),
+                        });
                     }
                     catch (err) {
                         callbacks.onToolError(toolCallId, toolCall.function.name, err);

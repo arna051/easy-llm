@@ -13,7 +13,7 @@ export interface ChatResponseMessage {
 export type OnToolCallCallback = (
   message: Omit<ChatToolMessage, 'content'> & { content?: null | string },
 ) => void;
-export type OnResponseCallCallback = (message: ChatResponseMessage) => void;
+export type OnResponseCallCallback = (message: ChatResponseMessage | ChatToolMessage) => void;
 export type OnErrorCallback = (error: Error | AxiosError) => void;
 export type OnToolErrorCallback = (id: string, toolName: string, error: any) => void;
 export type OnToolCallingCallback = (id: string, toolName: string, args: any) => void;
