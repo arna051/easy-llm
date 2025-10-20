@@ -8,6 +8,7 @@ const SendRequest = async ({ callbacks, functions, others, tools, axios, body, b
         let status = true;
         body.tools = tools;
         callbacks.onStateChange(true);
+        body.messages = body.messages.map(x => normalizeChatMessage(x));
         while (status) {
             const controller = new AbortController();
             others.signal = controller;

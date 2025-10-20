@@ -19,6 +19,8 @@ export const SendRequest: SendFunction = async ({
 
     callbacks.onStateChange(true);
 
+    body.messages = body.messages.map(x => normalizeChatMessage(x as any))
+
     while (status) {
       const controller = new AbortController();
 
