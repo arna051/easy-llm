@@ -1,6 +1,6 @@
 {
   "name": "easy-llm-call",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "an easy way to make call to LLMs with function call and tools. tested by: Deepseek, openAI, ollama",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

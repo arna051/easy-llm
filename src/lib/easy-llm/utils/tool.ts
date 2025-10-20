@@ -39,6 +39,10 @@ export function toolRegister({
     cookedTool.function.parameters = parameters;
   }
 
-  tools.push(cookedTool);
+  const index = tools.findIndex(x => x.function.name === cookedTool.function.name);
+  if (tools[index])
+    tools[index] = cookedTool;
+  else
+    tools.push(cookedTool);
   functions[tool.name] = tool.func;
 }
