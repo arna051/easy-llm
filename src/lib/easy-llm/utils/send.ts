@@ -132,7 +132,7 @@ export function normalizeChatMessage(msg: ChatCompletionMessage): ChatCompletion
             ? call.function.arguments
             : JSON.stringify(call.function.arguments ?? {}),
       },
-    }));
+    })) as any;
   }
 
   return safeMessage;

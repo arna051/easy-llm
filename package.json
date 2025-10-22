@@ -22,8 +22,16 @@
     "url": "git+https://github.com/arna051/easy-llm.git"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./react": "./dist/react/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "require": "./dist/react/index.js",
+      "default": "./dist/react/index.js"
+    }
   },
   "keywords": [
     "llm",

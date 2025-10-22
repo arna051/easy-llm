@@ -1,9 +1,9 @@
-export interface LLMToolCall {
+export interface LLMToolCall<T = Record<string, any>> {
   id: string;
   type: 'function';
   function: {
     name: string;
-    arguments: string; // raw JSON string
+    arguments: T; // raw JSON string
   };
 }
 export type ChatRole = 'system' | 'user' | 'assistant' | 'tool';
@@ -20,11 +20,11 @@ export interface ChatCompletionChoice {
   index: number;
   message: ChatCompletionMessage;
   finish_reason:
-    | 'stop'
-    | 'length'
-    | 'tool_calls'
-    | 'content_filter'
-    | 'insufficient_system_resource';
+  | 'stop'
+  | 'length'
+  | 'tool_calls'
+  | 'content_filter'
+  | 'insufficient_system_resource';
 }
 
 export interface ChatCompletionResponse {

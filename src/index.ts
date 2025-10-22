@@ -1,4 +1,55 @@
 export * from './lib';
+
+export type { EasyLLMProps, OtherProps } from './types/main';
+export type {
+  LLMToolParameter,
+  LLMToolFunction,
+  LLMToolSchema,
+  FunctionAny,
+  AddToolProps,
+} from './types/tool';
+export type { ResponseFormat, ChatCompletionRequest } from './types/body';
+export type {
+  ChatToolMessage,
+  ChatResponseMessage,
+  OnToolCallCallback,
+  OnResponseCallCallback,
+  OnErrorCallback,
+  OnToolErrorCallback,
+  OnToolCallingCallback,
+  OnToolResultCallback,
+  OnLoadingCallback,
+  Callbacks,
+} from './types/message';
+export type { SendFunctionProps, SendFunction, SendProps } from './types/send';
+export type {
+  LLMToolCall,
+  ChatRole,
+  ChatCompletionMessage,
+  ChatCompletionChoice,
+  ChatCompletionResponse,
+} from './types/res';
+export type {
+  EasyOllamaProps,
+  OllamaChatMessage,
+  OllamaChatRequest,
+  OllamaChatResponse,
+  OllamaSendProps,
+  OllamaSendFunctionProps,
+  OllamaSendFunction,
+  OllamaToolCall,
+} from './types/ollama';
+export type {
+  useEasyLLMProps,
+  WithTime,
+  SendFunctionProps as useEasyLLMSendFunctionProps,
+} from './types/llm-hook';
+export type {
+  useEasyOllamaProps,
+  WithOllamaTime,
+  OllamaSendFunctionProps as OllamaHookSendFunctionProps,
+} from './types/ollama-hook';
+
 try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     require.resolve("react");
