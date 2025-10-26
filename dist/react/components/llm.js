@@ -71,5 +71,6 @@ function useEasyLLM({ systemPrompt, tools, onError, onMessage, onStateChange, on
         loading,
         send,
         llm,
+        setMessages
     };
 }

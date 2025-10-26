@@ -25,4 +25,5 @@ export declare function useEasyOllama({ systemPrompt, tools, onError, onMessage,
         send: (body: import("../../types").OllamaSendProps) => /*elided*/ any;
         abort: () => void;
     };
+    setMessages: import("react").Dispatch<import("react").SetStateAction<WithTime<OllamaChatMessage>[]>>;
 };

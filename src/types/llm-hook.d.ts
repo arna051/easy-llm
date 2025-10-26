@@ -1,6 +1,7 @@
 import { ChatCompletionRequest } from './body';
 import { EasyLLMProps } from './main';
 import { Callbacks } from './message';
+import { ChatRole } from './res';
 import { AddToolProps } from './tool';
 
 type PartialLLM = Partial<Callbacks>;

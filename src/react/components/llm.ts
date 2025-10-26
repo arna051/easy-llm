@@ -20,12 +20,12 @@ export function useEasyLLM({
   const [messages, setMessages] = useState<WithTime<ChatCompletionMessage>[]>(
     systemPrompt
       ? [
-          {
-            role: 'system',
-            content: systemPrompt,
-            timestamp: Date.now(),
-          },
-        ]
+        {
+          role: 'system',
+          content: systemPrompt,
+          timestamp: Date.now(),
+        },
+      ]
       : [],
   );
   const [errors, setErrors] = useState<WithTime<Error>[]>([]);
@@ -85,6 +85,7 @@ export function useEasyLLM({
     });
   }, []);
 
+
   return {
     errors: {
       errors,
@@ -95,5 +96,6 @@ export function useEasyLLM({
     loading,
     send,
     llm,
+    setMessages
   };
 }

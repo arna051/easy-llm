@@ -33,5 +33,8 @@ function toolRegister({ tools, functions, tool, }) {
         tools[index] = cookedTool;
     else
         tools.push(cookedTool);
-    functions[tool.name] = tool.func;
+    functions[tool.name] = {
+        func: tool.func,
+        type: tool.type
+    };
 }

@@ -19,6 +19,7 @@ export interface LLMToolSchema {
 export type FunctionAny = (args: Record<string, any>) => any | Promise<any>;
 
 export interface AddToolProps {
+  type: 'auto' | 'cut-for-user'
   func: FunctionAny;
   name: string;
   desc: string;
@@ -30,4 +31,9 @@ export interface AddToolProps {
       required?: boolean;
     }
   >;
+}
+
+export interface FunctionRecord {
+  type: 'auto' | 'cut-for-user'
+  func: FunctionAny
 }

@@ -84,21 +84,27 @@ export const SendRequest: OllamaSendFunction = async ({
           callbacks.onToolCall(toolCallId, toolCall.function.name, parsedArguments);
 
           try {
-            const content = await functions[toolCall.function.name](parsedArguments);
+            const { func, type } = functions[toolCall.function.name]
+            const content = await func(
+              toolCall.function.arguments as any,
+            );
+            if (!type || type === 'auto') {
+              callbacks.onToolResult(toolCallId, toolCall.function.name, content);
 
-            callbacks.onToolResult(toolCallId, toolCall.function.name, content);
+              body.messages.push({
+                role: 'tool',
+                tool_call_id: toolCallId,
+                content: stringifyToolContent(content),
+              });
 
-            body.messages.push({
-              role: 'tool',
-              tool_call_id: toolCallId,
-              content: stringifyToolContent(content),
-            });
-
-            callbacks.onMessage({
-              role: 'tool',
-              tool_call_id: toolCallId,
-              content: stringifyToolContent(content),
-            })
+              callbacks.onMessage({
+                role: 'tool',
+                tool_call_id: toolCallId,
+                content: stringifyToolContent(content),
+              })
+            } else {
+              shouldContinue = false;
+            }
           } catch (err) {
             callbacks.onToolError(toolCallId, toolCall.function.name, err);
 
@@ -114,7 +120,8 @@ export const SendRequest: OllamaSendFunction = async ({
           await new Promise((res) => setTimeout(res, betweenRequestDelay));
         }
 
-        continue;
+        if (shouldContinue)
+          continue;
       }
 
       callbacks.onMessage(message as any);

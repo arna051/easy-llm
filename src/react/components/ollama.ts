@@ -21,12 +21,12 @@ export function useEasyOllama({
   const [messages, setMessages] = useState<WithTime<OllamaChatMessage>[]>(
     systemPrompt
       ? [
-          {
-            role: 'system',
-            content: systemPrompt,
-            timestamp: Date.now(),
-          },
-        ]
+        {
+          role: 'system',
+          content: systemPrompt,
+          timestamp: Date.now(),
+        },
+      ]
       : [],
   );
   const [errors, setErrors] = useState<WithTime<Error>[]>([]);
@@ -97,5 +97,6 @@ export function useEasyOllama({
     loading,
     send,
     ollama,
+    setMessages
   };
 }

@@ -4,6 +4,7 @@ import {
   Callbacks,
   EasyOllamaProps,
   FunctionAny,
+  FunctionRecord,
   LLMToolSchema,
   OllamaSendProps,
   OnErrorCallback,
@@ -32,7 +33,7 @@ export function EasyOllama({
   });
 
   const tools: LLMToolSchema[] = [];
-  const functions: Record<string, FunctionAny> = {};
+  const functions: Record<string, FunctionRecord> = {};
 
   const callbacks: Callbacks = {
     onMessage: () => null,

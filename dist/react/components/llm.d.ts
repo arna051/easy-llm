@@ -24,4 +24,5 @@ export declare function useEasyLLM({ systemPrompt, tools, onError, onMessage, on
         send: (body: import("../../types").SendProps) => /*elided*/ any;
         abort: () => void;
     };
+    setMessages: import("react").Dispatch<import("react").SetStateAction<WithTime<ChatCompletionMessage>[]>>;
 };

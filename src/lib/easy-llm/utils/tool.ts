@@ -1,4 +1,4 @@
-import { AddToolProps, FunctionAny, LLMToolParameter, LLMToolSchema } from '../../../types';
+import { AddToolProps, FunctionRecord, LLMToolParameter, LLMToolSchema } from '../../../types';
 
 export function toolRegister({
   tools,
@@ -6,7 +6,7 @@ export function toolRegister({
   tool,
 }: {
   tools: LLMToolSchema[];
-  functions: Record<string, FunctionAny>;
+  functions: Record<string, FunctionRecord>;
   tool: AddToolProps;
 }) {
   const cookedTool: LLMToolSchema = {
@@ -44,5 +44,8 @@ export function toolRegister({
     tools[index] = cookedTool;
   else
     tools.push(cookedTool);
-  functions[tool.name] = tool.func;
+  functions[tool.name] = {
+    func: tool.func,
+    type: tool.type
+  };
 }

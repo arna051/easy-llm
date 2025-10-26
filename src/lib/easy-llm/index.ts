@@ -13,6 +13,7 @@ import {
   OnToolErrorCallback,
   OnToolResultCallback,
   OnToolCallingCallback,
+  FunctionRecord,
 } from '../../types';
 import { SendRequest, toolRegister } from './utils';
 
@@ -31,7 +32,7 @@ export function EasyLLM({
   });
 
   const tools: LLMToolSchema[] = [];
-  const functions: Record<string, FunctionAny> = {};
+  const functions: Record<string, FunctionRecord> = {};
 
   const callbacks: Callbacks = {
     onMessage: () => null,

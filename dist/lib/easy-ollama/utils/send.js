@@ -45,18 +45,24 @@ const SendRequest = async ({ callbacks, functions, others, tools, axios, body, b
                     const parsedArguments = toolCall.function.arguments;
                     callbacks.onToolCall(toolCallId, toolCall.function.name, parsedArguments);
                     try {
-                        const content = await functions[toolCall.function.name](parsedArguments);
-                        callbacks.onToolResult(toolCallId, toolCall.function.name, content);
-                        body.messages.push({
-                            role: 'tool',
-                            tool_call_id: toolCallId,
-                            content: stringifyToolContent(content),
-                        });
-                        callbacks.onMessage({
-                            role: 'tool',
-                            tool_call_id: toolCallId,
-                            content: stringifyToolContent(content),
-                        });
+                        const { func, type } = functions[toolCall.function.name];
+                        const content = await func(toolCall.function.arguments);
+                        if (!type || type === 'auto') {
+                            callbacks.onToolResult(toolCallId, toolCall.function.name, content);
+                            body.messages.push({
+                                role: 'tool',
+                                tool_call_id: toolCallId,
+                                content: stringifyToolContent(content),
+                            });
+                            callbacks.onMessage({
+                                role: 'tool',
+                                tool_call_id: toolCallId,
+                                content: stringifyToolContent(content),
+                            });
+                        }
+                        else {
+                            shouldContinue = false;
+                        }
                     }
                     catch (err) {
                         callbacks.onToolError(toolCallId, toolCall.function.name, err);
@@ -70,7 +76,8 @@ const SendRequest = async ({ callbacks, functions, others, tools, axios, body, b
                 if (betweenRequestDelay) {
                     await new Promise((res) => setTimeout(res, betweenRequestDelay));
                 }
-                continue;
+                if (shouldContinue)
+                    continue;
             }
             callbacks.onMessage(message);
             shouldContinue = false;

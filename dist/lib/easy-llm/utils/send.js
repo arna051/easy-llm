@@ -23,18 +23,24 @@ const SendRequest = async ({ callbacks, functions, others, tools, axios, body, b
                     tool_call.function.arguments = parseArguments(tool_call.function.arguments);
                     callbacks.onToolCall(tool_call.id, tool_call.function.name, tool_call.function.arguments);
                     try {
-                        const content = await functions[tool_call.function.name](tool_call.function.arguments);
-                        callbacks.onToolResult(tool_call.id, tool_call.function.name, content);
-                        body.messages.push({
-                            role: 'tool',
-                            tool_call_id: tool_call.id,
-                            content,
-                        });
-                        callbacks.onMessage({
-                            role: 'tool',
-                            tool_call_id: tool_call.id,
-                            content,
-                        });
+                        const { func, type } = functions[tool_call.function.name];
+                        const content = await func(tool_call.function.arguments);
+                        if (type === 'auto' || !type) {
+                            callbacks.onToolResult(tool_call.id, tool_call.function.name, content);
+                            body.messages.push({
+                                role: 'tool',
+                                tool_call_id: tool_call.id,
+                                content,
+                            });
+                            callbacks.onMessage({
+                                role: 'tool',
+                                tool_call_id: tool_call.id,
+                                content,
+                            });
+                        }
+                        else {
+                            status = false;
+                        }
                     }
                     catch (err) {
                         callbacks.onToolError(tool_call.id, tool_call.function.name, err);
@@ -48,7 +54,8 @@ const SendRequest = async ({ callbacks, functions, others, tools, axios, body, b
                 if (betweenRequestDelay) {
                     await new Promise((res) => setTimeout(res, betweenRequestDelay));
                 }
-                continue;
+                if (status)
+                    continue;
             }
             callbacks.onMessage(message);
             status = false;

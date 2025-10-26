@@ -74,5 +74,6 @@ function useEasyOllama({ systemPrompt, tools, onError, onMessage, onStateChange,
         loading,
         send,
         ollama,
+        setMessages
     };
 }

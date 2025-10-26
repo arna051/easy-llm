@@ -2,7 +2,7 @@ import { AxiosInstance } from 'axios';
 import { Callbacks } from './message';
 import { EasyLLMProps, OtherProps } from './main';
 import { ChatRole } from './res';
-import { LLMToolSchema, FunctionAny } from './tool';
+import { LLMToolSchema, FunctionAny, FunctionRecord } from './tool';
 
 export interface EasyOllamaProps
   extends Omit<EasyLLMProps, 'apiKey'> {
@@ -50,7 +50,7 @@ export type OllamaSendFunctionProps = {
   others: OtherProps;
   callbacks: Callbacks;
   tools: LLMToolSchema[];
-  functions: Record<string, FunctionAny>;
+  functions: Record<string, FunctionRecord>;
   axios: AxiosInstance;
   body: OllamaChatRequest;
   retries: number;
