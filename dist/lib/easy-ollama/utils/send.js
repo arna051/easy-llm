@@ -79,7 +79,8 @@ const SendRequest = async ({ callbacks, functions, others, tools, axios, body, b
                 if (shouldContinue)
                     continue;
             }
-            callbacks.onMessage(message);
+            if (shouldContinue)
+                callbacks.onMessage(message);
             shouldContinue = false;
         }
     }

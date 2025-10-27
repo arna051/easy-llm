@@ -85,8 +85,8 @@ export const SendRequest: SendFunction = async ({
         if (status)
           continue;
       }
-
-      callbacks.onMessage(message as any);
+      if (status)
+        callbacks.onMessage(message as any);
       status = false;
     }
   } catch (err: any) {

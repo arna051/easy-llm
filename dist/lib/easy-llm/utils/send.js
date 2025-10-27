@@ -57,7 +57,8 @@ const SendRequest = async ({ callbacks, functions, others, tools, axios, body, b
                 if (status)
                     continue;
             }
-            callbacks.onMessage(message);
+            if (status)
+                callbacks.onMessage(message);
             status = false;
         }
     }

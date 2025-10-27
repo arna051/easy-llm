@@ -124,7 +124,8 @@ export const SendRequest: OllamaSendFunction = async ({
           continue;
       }
 
-      callbacks.onMessage(message as any);
+      if (shouldContinue)
+        callbacks.onMessage(message as any);
       shouldContinue = false;
     }
   } catch (err: any) {
